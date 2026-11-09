@@ -1,0 +1,73 @@
+name: Build Flame V1.2 Free (Windows)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-build:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check uploaded source archive
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'Flame_V1_2_GitHub_Ready.zip')) {
+            throw 'Envie o arquivo Flame_V1_2_GitHub_Ready.zip para a raiz do repositorio antes de executar o build.'
+          }
+
+      - name: Extract source package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path project -Force | Out-Null
+          Expand-Archive -Path 'Flame_V1_2_GitHub_Ready.zip' -DestinationPath project -Force
+          if (!(Test-Path 'project/launcher.py')) { throw 'O ZIP nao contem launcher.py na raiz.' }
+          if (!(Test-Path 'project/FlameV1_Installer.iss')) { throw 'O ZIP nao contem FlameV1_Installer.iss.' }
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install build dependencies
+        run: python -m pip install --disable-pip-version-check pyinstaller pillow
+
+      - name: Test Python code
+        working-directory: project
+        run: python -m unittest discover -s tests -v
+
+      - name: Compile EXE
+        working-directory: project
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name FlameV1_Free --icon 'assets/flame.ico' --add-data 'assets;assets' --add-data 'ui;ui' --hidden-import flame_core --hidden-import service --hidden-import windows_bridge --distpath dist --workpath build --specpath . launcher.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (!(Test-Path 'dist/FlameV1_Free.exe')) { throw 'EXE nao foi gerado.' }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build Windows installer
+        working-directory: project
+        shell: pwsh
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if (!(Test-Path $compiler)) { throw 'ISCC nao encontrado.' }
+          & $compiler 'FlameV1_Installer.iss'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (!(Test-Path 'installer/Flame_V1_Free_Setup.exe')) { throw 'Instalador nao foi gerado.' }
+
+      - name: Upload installer and portable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Flame-V1-Free-Public-Beta-Windows
+          path: |
+            project/dist/FlameV1_Free.exe
+            project/installer/Flame_V1_Free_Setup.exe
+          if-no-files-found: error
