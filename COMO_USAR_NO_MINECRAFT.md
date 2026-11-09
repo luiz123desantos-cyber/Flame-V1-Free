@@ -36,7 +36,7 @@ Pelo GitHub: **Actions → Build Flame V1.2 Free (Windows) → Run workflow → 
 
 ## Resolução de problemas
 
-- **Não abre localhost:15700:** encerre versões antigas de Flame ou Love157 e reinicie o Flame; a porta pode estar ocupada.
+- **Não abre localhost:15700:** encerre versões antigas de Flame e reinicie o Flame; a porta pode estar ocupada.
 - **Janela em foco: Não:** retorne ao jogo; tente F9 para vincular novamente.
 - **Parou após F11:** aguarde a janela voltar. A recuperação automática depende do mesmo PID; se o processo mudar, use F9 e PRONTO novamente.
 - **Contador não aumenta:** confirme que clicou em PRONTO, habilitou LMB/RMB e está segurando o botão físico no jogo em foco.
