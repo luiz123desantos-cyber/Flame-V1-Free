@@ -1,0 +1,11 @@
+# Archives intended for manual upload
+# The ZIP source package is required by the Windows build workflow.
+# Generated files
+build/
+dist/
+installer/
+__pycache__/
+*.pyc
+*.log
+.venv/
+.env
